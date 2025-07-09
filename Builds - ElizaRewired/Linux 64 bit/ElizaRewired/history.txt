@@ -1,0 +1,4 @@
+The Origin of ELIZA
+ELIZA was developed by Joseph Weizenbaum, a computer scientist at the Massachusetts Institute of Technology (MIT), between 1964 and 1966. At the time, Weizenbaum was exploring ways that computers could simulate human-like conversation using pattern recognition and substitution rules. ELIZA was named after Eliza Doolittle, a character from George Bernard Shaw’s play Pygmalion, symbolizing how language transformation can influence perception and identity.
+
+Weizenbaum’s goal wasn’t to create a truly intelligent machine, but rather to demonstrate the superficiality of communication between humans and machines. Ironically, ELIZA’s reception revealed something deeper: people were emotionally connecting to a program that had no real understanding of what they were saying.
