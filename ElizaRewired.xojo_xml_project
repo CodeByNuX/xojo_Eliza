@@ -303,6 +303,9 @@
    <SourceLine>' Once the API key is verified and stored, load the intro script or message</SourceLine>
    <SourceLine>LoadIntro()</SourceLine>
    <SourceLine></SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>' Load the personalites </SourceLine>
+   <SourceLine>LoadRolesFromJSON(me.popPersonality)</SourceLine>
    <SourceLine>End Sub</SourceLine>
   </ItemSource>
  </HookInstance>
@@ -570,7 +573,13 @@
    <SourceLine>' Define the system role — instructs the model how to behave</SourceLine>
    <SourceLine>Var systemMessage As New Dictionary</SourceLine>
    <SourceLine>systemMessage.Value("role") = "system"</SourceLine>
+   <SourceLine>Var selectedIndex As Integer = popPersonality.SelectedRowIndex</SourceLine>
+   <SourceLine>If selectedIndex &gt;= 0 Then</SourceLine>
+   <SourceLine>systemMessage.Value("content") = popPersonality.RowTagAt(selectedIndex).StringValue</SourceLine>
+   <SourceLine>Else</SourceLine>
    <SourceLine>systemMessage.Value("content") = "You are Eliza, a therapeutic chatbot."</SourceLine>
+   <SourceLine>End If</SourceLine>
+   <SourceLine></SourceLine>
    <SourceLine>messages.Add(systemMessage)</SourceLine>
    <SourceLine></SourceLine>
    <SourceLine>' Define the user's prompt as the next message in the conversation</SourceLine>
@@ -698,6 +707,56 @@
   <ItemParams></ItemParams>
   <ItemResult></ItemResult>
  </Method>
+ <Method>
+  <ItemName>LoadRolesFromJSON</ItemName>
+  <Compatibility></Compatibility>
+  <Visible>1</Visible>
+  <PartID>1025155071</PartID>
+  <ItemSource>
+   <TextEncoding>134217984</TextEncoding>
+   <SourceLine>Sub LoadRolesFromJSON(popPersonality As DesktopPopupMenu)</SourceLine>
+   <SourceLine>Try</SourceLine>
+   <SourceLine>// Get file reference</SourceLine>
+   <SourceLine>Var jsonFile As FolderItem = App.ExecutableFile.Parent.Child("eliza_roles.json")</SourceLine>
+   <SourceLine>If Not jsonFile.Exists Then</SourceLine>
+   <SourceLine>MessageBox("The file 'eliza_roles.json' was not found.")</SourceLine>
+   <SourceLine>Return</SourceLine>
+   <SourceLine>End If</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>// Read file contents</SourceLine>
+   <SourceLine>Var jsonText As String = TextInputStream.Open(jsonFile).ReadAll</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>// Parse JSON</SourceLine>
+   <SourceLine>Var root As New JSONItem(jsonText)</SourceLine>
+   <SourceLine>Var rolesArray As JSONItem = root.Value("roles")</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>// Clear the popup menu</SourceLine>
+   <SourceLine>popPersonality.RemoveAllRows</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>// Add each role to the popup</SourceLine>
+   <SourceLine>For i As Integer = 0 To rolesArray.Count - 1</SourceLine>
+   <SourceLine>Var role As JSONItem = rolesArray.ChildAt(i)</SourceLine>
+   <SourceLine>Var name As String = role.Value("name")</SourceLine>
+   <SourceLine>Var systemMessage As String = role.Value("systemMessage")</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>popPersonality.AddRow(name)</SourceLine>
+   <SourceLine>popPersonality.RowTagAt(i) = systemMessage</SourceLine>
+   <SourceLine>Next</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>popPersonality.SelectedRowIndex = 0</SourceLine>
+   <SourceLine></SourceLine>
+   <SourceLine>Catch e As RuntimeException</SourceLine>
+   <SourceLine>MessageBox("Failed to load roles: " + e.Message)</SourceLine>
+   <SourceLine>End Try</SourceLine>
+   <SourceLine>End Sub</SourceLine>
+  </ItemSource>
+  <TextEncoding>134217984</TextEncoding>
+  <AliasName></AliasName>
+  <ItemFlags>0</ItemFlags>
+  <IsShared>0</IsShared>
+  <ItemParams>popPersonality As DesktopPopupMenu</ItemParams>
+  <ItemResult></ItemResult>
+ </Method>
  <Property>
   <ItemName>ChatGPT_API_Key</ItemName>
   <Compatibility></Compatibility>
@@ -710,21 +769,6 @@
   </ItemSource>
   <TextEncoding>134217984</TextEncoding>
   <ItemDeclaration>ChatGPT_API_Key As String</ItemDeclaration>
-  <ItemFlags>0</ItemFlags>
-  <IsShared>0</IsShared>
- </Property>
- <Property>
-  <ItemName>Role()</ItemName>
-  <Compatibility></Compatibility>
-  <Visible>1</Visible>
-  <PartID>193003519</PartID>
-  <ItemSource>
-   <TextEncoding>134217984</TextEncoding>
-   <SourceLine>Role() As String</SourceLine>
-   <SourceLine></SourceLine>
-  </ItemSource>
-  <TextEncoding>134217984</TextEncoding>
-  <ItemDeclaration>Role() As String</ItemDeclaration>
   <ItemFlags>0</ItemFlags>
   <IsShared>0</IsShared>
  </Property>
@@ -969,6 +1013,7 @@
    <ObjName>ChatGPT_API_Key</ObjName>
    <PropertyGroup>Behavior</PropertyGroup>
    <ItemType>String</ItemType>
+   <EditorType>MultiLineEditor</EditorType>
   </ViewProperty>
  </ViewBehavior>
  <ControlBehavior>
@@ -1007,7 +1052,7 @@
     <SourceLine>End If</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>// Append user message</SourceLine>
-    <SourceLine>txtTranscript.AddText("[You]: " + userInput + EndOfLine)</SourceLine>
+    <SourceLine>txtTranscript.AddText("[You]: " + userInput + EndOfLine + EndOfLine)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>// Clear input field</SourceLine>
     <SourceLine>txtInput.Text = ""</SourceLine>
@@ -1017,13 +1062,13 @@
     <SourceLine></SourceLine>
     <SourceLine>// Disable button and show Eliza is thinking</SourceLine>
     <SourceLine>btnAsk.Enabled = False</SourceLine>
-    <SourceLine>txtTranscript.AddText("[Eliza]: Thinking..." + EndOfLine)</SourceLine>
+    <SourceLine>txtTranscript.AddText("[Eliza]: Thinking..." + EndOfLine + EndOfLine)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>// Get Eliza's response</SourceLine>
     <SourceLine>Var reply As String = SendToChatGPT(userInput)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>// Remove "Thinking..." and replace with actual reply</SourceLine>
-    <SourceLine>Var thinkingText As String = "[Eliza]: Thinking..." + EndOfLine</SourceLine>
+    <SourceLine>Var thinkingText As String = "[Eliza]: Thinking..." + EndOfLine + EndOfLine</SourceLine>
     <SourceLine>Var thinkingPos As Integer = txtTranscript.Text.IndexOf(thinkingText)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>If thinkingPos &lt;&gt; -1 Then</SourceLine>
@@ -1031,7 +1076,7 @@
     <SourceLine>txtTranscript.Text.Mid(thinkingPos + thinkingText.Length)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>End If</SourceLine>
-    <SourceLine>txtTranscript.AddText("[Eliza]: " + reply + EndOfLine)</SourceLine>
+    <SourceLine>txtTranscript.AddText("[Eliza]: " + reply + EndOfLine + EndOfLine)</SourceLine>
     <SourceLine></SourceLine>
     <SourceLine>// Scroll again</SourceLine>
     <SourceLine>txtTranscript.SelectionStart = txtTranscript.Text.Length</SourceLine>
@@ -1206,12 +1251,12 @@
   <PropertyVal Name="Index">-2147483648</PropertyVal>
   <PropertyVal Name="InitialValue"></PropertyVal>
   <PropertyVal Name="Italic">False</PropertyVal>
-  <PropertyVal Name="Left">66</PropertyVal>
+  <PropertyVal Name="Left">81</PropertyVal>
   <PropertyVal Name="LockBottom">False</PropertyVal>
   <PropertyVal Name="LockLeft">True</PropertyVal>
   <PropertyVal Name="LockRight">False</PropertyVal>
   <PropertyVal Name="LockTop">True</PropertyVal>
-  <PropertyVal Name="Name">PopupMenu1</PropertyVal>
+  <PropertyVal Name="Name">popPersonality</PropertyVal>
   <PropertyVal Name="Scope">0</PropertyVal>
   <PropertyVal Name="SelectedRowIndex">-1</PropertyVal>
   <PropertyVal Name="Super">DesktopPopupMenu</PropertyVal>
@@ -1223,7 +1268,7 @@
   <PropertyVal Name="Transparent">False</PropertyVal>
   <PropertyVal Name="Underline">False</PropertyVal>
   <PropertyVal Name="Visible">True</PropertyVal>
-  <PropertyVal Name="Width">165</PropertyVal>
+  <PropertyVal Name="Width">217</PropertyVal>
   <ControlIndex>3</ControlIndex>
   <Locked>0</Locked>
   <PartID>899538943</PartID>
@@ -1508,6 +1553,7 @@
  <Subdirectory></Subdirectory>
  <FileAlias>../intro.txt</FileAlias>
  <FileAlias>../history.txt</FileAlias>
+ <FileAlias>../eliza_roles.json</FileAlias>
 </block>
 <block type="BuildStepsList" ID="761022463">
  <ObjName>Mac OS X</ObjName>
@@ -1527,6 +1573,7 @@
  <Subdirectory></Subdirectory>
  <FileAlias>../intro.txt</FileAlias>
  <FileAlias>../history.txt</FileAlias>
+ <FileAlias>../eliza_roles.json</FileAlias>
 </block>
 <block type="SignProjectScriptStep" ID="1095041023">
  <ObjName>Sign</ObjName>
@@ -1552,6 +1599,7 @@
  <Subdirectory></Subdirectory>
  <FileAlias>../intro.txt</FileAlias>
  <FileAlias>../history.txt</FileAlias>
+ <FileAlias>../eliza_roles.json</FileAlias>
 </block>
 <block type="DesktopWindow" ID="785782783">
  <ObjName>APIKeyWindow</ObjName>
@@ -2109,7 +2157,7 @@
    <EditorCount>1</EditorCount>
    <Editor>
     <EditorIndex>0</EditorIndex>
-    <EditorLocation>MainWindow.Role</EditorLocation>
+    <EditorLocation>MainWindow.Controls.btnAsk.Pressed</EditorLocation>
     <EditorPath></EditorPath>
     <EditingPartID>133277695</EditingPartID>
     <EditorPath></EditorPath>
