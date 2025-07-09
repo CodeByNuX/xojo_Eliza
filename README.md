@@ -37,4 +37,4 @@ Of course, it didn’t. But it *felt* like it did. And that feeling stuck with m
 
 1. **Clone the repo**  
    ```bash
-   git clone
+   git clone https://github.com/CodeByNuX/xojo_Eliza.git
